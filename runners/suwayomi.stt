@@ -190,7 +190,7 @@ class Target {
                 date: new Date(parseInt(chapter.uploadDate)),
                 language: response.manga.source.lang, // api does not provide language on a per-chapter basis
                 title: chapter.name,
-                providers: [{ id: chapter.scanlator, name: chapter.scanlator }],
+                providers: [{ id: chapter.scanlator || "UNKNOWN", name: chapter.scanlator || "UNKNOWN" }],
             });
         }
         return chapters;
