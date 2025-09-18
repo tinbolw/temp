@@ -1,4 +1,5 @@
 import {
+  BooleanState,
   CatalogRating,
   Chapter,
   ChapterData,
@@ -13,6 +14,7 @@ import {
   Property,
   RunnerInfo,
   RunnerPreferenceProvider,
+  SourceConfig,
   UITextField,
 } from "@suwatte/daisuke";
 
@@ -21,11 +23,6 @@ import { GetAllMangaQuery, GetMangaQuery, GetMangaChaptersQuery, GetChapterPages
 import { GetAllMangasResponse, GetChapterPagesResponse, GetMangaChaptersResponse, GetMangaResponse } from "./types";
 
 import { genAuthHeader, graphqlPost, matchMangaStatus } from "./utils";
-
-// let tempUrl : string = "";
-// (async () => {
-//   tempUrl = await ObjectStore.string("suwayomi_url") ?? "http://127.0.0.1:4567";
-// })();
 
 export class Target
   implements
@@ -39,27 +36,21 @@ export class Target
     name: "Suwayomi",
     version: 0.1,
     thumbnail: "suwayomi.png",
-    website: this.baseUrl,
+    website: "https://github.com/Suwayomi/Suwayomi-Server",
     supportedLanguages: ["UNIVERSAL"],
     rating: CatalogRating.SAFE,
   };
   
+  config: SourceConfig = {};
+
   apiUrl = "";
   client = new NetworkClient();
 
   async getDirectory(request: DirectoryRequest): Promise<PagedResult> {
     // loading suwayomi server URL here and when getting manga at getContent() to refresh if it is changed in config
     // those seem to be the two starting points of other api requests
-    const temp = await ObjectStore.string("suwayomi_url") ?? "http://127.0.0.1:4567";
-    this.baseUrl = temp;
-    this.info = 
-    {
-      ...this.info,
-      website: temp,
-    };
+    this.baseUrl = await ObjectStore.string("suwayomi_url") ?? "http://127.0.0.1:4567";
     this.apiUrl = this.baseUrl + "/api/graphql";
-
-    console.log(this.baseUrl);
 
     const response: GetAllMangasResponse = await graphqlPost(this.apiUrl, this.client, GetAllMangaQuery(request.query), 
       await ObjectStore.string("suwayomi_username"), await ObjectStore.string("suwayomi_password"));
@@ -233,5 +224,11 @@ export class Target
         )}`,
       },
     }
+  }
+
+  async onEnvironmentLoaded(): Promise<void> {
+    this.config = {
+      cloudflareResolutionURL: await ObjectStore.string("suwayomi_url") ?? "http://127.0.0.1:4567",
+    };
   }
 }
