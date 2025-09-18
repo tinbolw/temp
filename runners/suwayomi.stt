@@ -102,10 +102,6 @@ exports.Target = void 0;
 const daisuke_1 = require("@suwatte/daisuke");
 const gql_1 = require("./gql");
 const utils_1 = require("./utils");
-// let tempUrl : string = "";
-// (async () => {
-//   tempUrl = await ObjectStore.string("suwayomi_url") ?? "http://127.0.0.1:4567";
-// })();
 class Target {
     baseUrl = "";
     info = {
@@ -113,24 +109,18 @@ class Target {
         name: "Suwayomi",
         version: 0.1,
         thumbnail: "suwayomi.png",
-        website: this.baseUrl,
+        website: "https://github.com/Suwayomi/Suwayomi-Server",
         supportedLanguages: ["UNIVERSAL"],
         rating: daisuke_1.CatalogRating.SAFE,
     };
+    config = {};
     apiUrl = "";
     client = new NetworkClient();
     async getDirectory(request) {
         // loading suwayomi server URL here and when getting manga at getContent() to refresh if it is changed in config
         // those seem to be the two starting points of other api requests
-        const temp = await ObjectStore.string("suwayomi_url") ?? "http://127.0.0.1:4567";
-        this.baseUrl = temp;
-        this.info =
-            {
-                ...this.info,
-                website: temp,
-            };
+        this.baseUrl = await ObjectStore.string("suwayomi_url") ?? "http://127.0.0.1:4567";
         this.apiUrl = this.baseUrl + "/api/graphql";
-        console.log(this.baseUrl);
         const response = await (0, utils_1.graphqlPost)(this.apiUrl, this.client, (0, gql_1.GetAllMangaQuery)(request.query), await ObjectStore.string("suwayomi_username"), await ObjectStore.string("suwayomi_password"));
         const highlights = response.mangas.nodes
             .map((manga) => {
@@ -272,6 +262,11 @@ class Target {
             headers: {
                 "authorization": `Basic ${(0, utils_1.genAuthHeader)(await ObjectStore.string("suwayomi_username"), await ObjectStore.string("suwayomi_password"))}`,
             },
+        };
+    }
+    async onEnvironmentLoaded() {
+        this.config = {
+            cloudflareResolutionURL: await ObjectStore.string("suwayomi_url") ?? "http://127.0.0.1:4567",
         };
     }
 }
